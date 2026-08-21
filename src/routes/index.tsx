@@ -9,7 +9,7 @@ export const Route = createFileRoute('/')({
 
 const KRW_TO_IDR = 13.0
 function getJastipFeePercent(priceKRW: number) {
-  return priceKRW > 20000 ? 0.4 : 0.3
+  return priceKRW > 20000 ? 0.3 : 0.4
 }
 
 const onlineMalls = [
