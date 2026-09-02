@@ -203,22 +203,19 @@ function Home() {
               ))}
             </ul>
 
-            {cart.length > 0 && (
-              <div className="border-t pt-3 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>{formatIdr(subtotalIdr)}</span>
+              {cart.length > 0 && (
+                <div className="border-t pt-3 space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>{formatIdr(subtotalIdr)}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">Includes jastip fee, excludes shipping fee</p>
+                  <div className="flex justify-between font-bold text-base pt-1">
+                    <span>Total</span>
+                    <span>{formatIdr(grandTotal)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-gray-500">
-                  <span>Jastip fee</span>
-                  <span>{formatIdr(totalFees)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-base pt-1">
-                  <span>Total</span>
-                  <span>{formatIdr(grandTotal)}</span>
-                </div>
-              </div>
-            )}
+               )}
 
             <button
               onClick={handleProceedToOrder}
