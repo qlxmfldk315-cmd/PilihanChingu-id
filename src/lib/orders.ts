@@ -3,7 +3,9 @@ import { supabase } from './supabase'
 export interface OrderItemInput {
   name: string
   priceKRW: number
+  quantity: number
   url?: string
+  image?: string
 }
 
 export interface NewOrder {

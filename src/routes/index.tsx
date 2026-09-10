@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import products from '@/data/products'
 import type { OrderItemInput } from '@/lib/orders'
@@ -35,26 +36,45 @@ function Home() {
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
 
-  const addToCart = (item: OrderItemInput) => setCart((prev) => [...prev, item])
+  const addToCart = (item: OrderItemInput) => {
+    setCart((prev) => {
+      const existingIndex = prev.findIndex((i) => i.name === item.name && i.url === item.url)
+      if (existingIndex !== -1) {
+        const updated = [...prev]
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + item.quantity,
+        }
+        return updated
+      }
+      return [...prev, item]
+    })
+  }
+
+  const updateQuantity = (index: number, quantity: number) => {
+    if (quantity < 1) return
+    setCart((prev) => prev.map((item, i) => (i === index ? { ...item, quantity } : item)))
+  }
+
   const removeFromCart = (index: number) =>
     setCart((prev) => prev.filter((_, i) => i !== index))
 
-  const handleCustomSubmit = (e: React.FormEvent) => {
+  const handleCustomSubmit = (e: FormEvent) => {
     e.preventDefault()
     const price = Number(customPrice)
     if (!customName.trim() || !price) return
-    addToCart({ name: customName.trim(), priceKRW: price, url: customUrl.trim() || undefined })
+    addToCart({ name: customName.trim(), priceKRW: price, url: customUrl.trim() || undefined, quantity: 1 })
     setCustomName('')
     setCustomPrice('')
     setCustomUrl('')
   }
 
-  const totalKRW = cart.reduce((sum, item) => sum + item.priceKRW, 0)
+  const totalKRW = cart.reduce((sum, item) => sum + item.priceKRW * item.quantity, 0)
   const subtotalIdr = totalKRW * KRW_TO_IDR
   const totalFees = cart.reduce(
-  (sum, item) => sum + item.priceKRW * KRW_TO_IDR * getJastipFeePercent(item.priceKRW),
-  0
-)
+    (sum, item) => sum + item.priceKRW * item.quantity * KRW_TO_IDR * getJastipFeePercent(item.priceKRW),
+    0
+  )
   const grandTotal = subtotalIdr + totalFees
 
   const handleProceedToOrder = () => {
@@ -78,8 +98,8 @@ function Home() {
             Supporting Online Malls
           </span>
           {onlineMalls.map((mall) => (
-            
-              <a key={mall.name}
+            <a
+              key={mall.name}
               href={mall.url}
               target="_blank"
               rel="noopener noreferrer"
@@ -107,7 +127,7 @@ function Home() {
                     </p>
                     <button
                       onClick={() =>
-                        addToCart({ name: item.name, priceKRW: item.priceKRW, url: item.url })
+                        addToCart({ name: item.name, priceKRW: item.priceKRW, url: item.url, image: item.image, quantity: 1 })
                       }
                       className="w-full bg-rose-50 text-rose-600 border border-rose-200 rounded-lg py-1.5 text-sm font-semibold hover:bg-rose-100 transition"
                     >
@@ -161,41 +181,41 @@ function Home() {
         <aside className="space-y-4">
           <div className="bg-white rounded-xl border p-4 space-y-3">
             <h3 className="font-bold">Your Cart</h3>
-            {cart.length === 0 && (
-              <p className="text-sm text-gray-500">No items yet.</p>
-            )}
+            {cart.length === 0 && <p className="text-sm text-gray-500">No items yet.</p>}
             <ul className="space-y-2">
               {cart.map((item, i) => (
                 <li key={i} className="flex justify-between items-start text-sm gap-2">
                   <span>
                     {item.name}
                     <span className="block text-xs text-gray-400">
-                      ₩{item.priceKRW.toLocaleString()}
+                      ₩{item.priceKRW.toLocaleString()} × {item.quantity}
                     </span>
                   </span>
-                  <button
-                    onClick={() => removeFromCart(i)}
-                    className="text-xs text-rose-500 hover:underline"
-                  >
-                    Remove
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center border rounded">
+                      <button onClick={() => updateQuantity(i, item.quantity - 1)} className="px-2 text-gray-500 hover:text-gray-800">−</button>
+                      <span className="px-2 text-xs">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(i, item.quantity + 1)} className="px-2 text-gray-500 hover:text-gray-800">+</button>
+                    </div>
+                    <button onClick={() => removeFromCart(i)} className="text-xs text-rose-500 hover:underline">Remove</button>
+                  </div>
                 </li>
               ))}
             </ul>
 
-              {cart.length > 0 && (
-                <div className="border-t pt-3 space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>{formatIdr(subtotalIdr)}</span>
-                  </div>
-                  <p className="text-xs text-gray-400">Includes jastip fee, excludes shipping fee</p>
-                  <div className="flex justify-between font-bold text-base pt-1">
-                    <span>Total</span>
-                    <span>{formatIdr(grandTotal)}</span>
-                  </div>
+            {cart.length > 0 && (
+              <div className="border-t pt-3 space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>{formatIdr(subtotalIdr)}</span>
                 </div>
-               )}
+                <p className="text-xs text-gray-400">Includes jastip fee, excludes shipping fee</p>
+                <div className="flex justify-between font-bold text-base pt-1">
+                  <span>Total</span>
+                  <span>{formatIdr(grandTotal)}</span>
+                </div>
+              </div>
+            )}
 
             <button
               onClick={handleProceedToOrder}
@@ -206,7 +226,7 @@ function Home() {
             </button>
           </div>
         </aside>
-            </main>
+      </main>
 
       {showOrderModal && (
         <OrderModal

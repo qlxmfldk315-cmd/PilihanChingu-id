@@ -62,11 +62,11 @@ export default function OrderModal({
 
         <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
           {cart.map((item, i) => (
-            <div key={i} className="flex justify-between">
-              <span>{item.name}</span>
-              <span>₩{item.priceKRW.toLocaleString()}</span>
-            </div>
-          ))}
+  <div key={i} className="flex justify-between">
+    <span>{item.name} × {item.quantity}</span>
+    <span>₩{(item.priceKRW * item.quantity).toLocaleString()}</span>
+  </div>
+))}
           <div className="border-t pt-1 flex justify-between font-bold">
             <span>Total</span>
             <span>{formatIdr(totalIdr)}</span>
