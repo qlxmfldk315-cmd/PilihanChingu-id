@@ -6,43 +6,21 @@ export async function onRequestGet({ request }) {
   }
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
-      },
-    })
-    const html = await res.text()
+    const res = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
+    const json = await res.json()
 
-    const getMeta = (prop) => {
-      const patterns = [
-        new RegExp(`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'),
-        new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${prop}["']`, 'i'),
-      ]
-      for (const pattern of patterns) {
-        const match = html.match(pattern)
-        if (match) return match[1]
-      }
-      return null
+    if (json.status !== 'success') {
+      return Response.json({ title: null, image: null, price: null })
     }
 
-    const title = getMeta('og:title')
-    const image = getMeta('og:image')
-    const priceRaw = getMeta('product:price:amount') || getMeta('og:price:amount')
-    const price = priceRaw ? Number(priceRaw.replace(/[^\d.]/g, '')) : null
+    const data = json.data
 
     return Response.json({
-      title,
-      image,
-      price,
-      debug: {
-        status: res.status,
-        finalUrl: res.url,
-        htmlLength: html.length,
-        htmlSample: html.slice(0, 300),
-      },
+      title: data.title || null,
+      image: data.image?.url || data.logo?.url || null,
+      price: null, // price varies too much per site to extract reliably — left for manual entry
     })
   } catch (err) {
-    return Response.json({ error: 'Failed to fetch preview', message: String(err) }, { status: 500 })
+    return Response.json({ error: 'Failed to fetch preview' }, { status: 500 })
   }
 }
