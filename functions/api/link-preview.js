@@ -31,8 +31,18 @@ export async function onRequestGet({ request }) {
     const priceRaw = getMeta('product:price:amount') || getMeta('og:price:amount')
     const price = priceRaw ? Number(priceRaw.replace(/[^\d.]/g, '')) : null
 
-    return Response.json({ title, image, price })
+    return Response.json({
+      title,
+      image,
+      price,
+      debug: {
+        status: res.status,
+        finalUrl: res.url,
+        htmlLength: html.length,
+        htmlSample: html.slice(0, 300),
+      },
+    })
   } catch (err) {
-    return Response.json({ error: 'Failed to fetch preview' }, { status: 500 })
+    return Response.json({ error: 'Failed to fetch preview', message: String(err) }, { status: 500 })
   }
 }
