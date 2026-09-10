@@ -2,15 +2,12 @@ import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import products from '@/data/products'
 import type { OrderItemInput } from '@/lib/orders'
+import { KRW_TO_IDR, formatIdr, getJastipFeePercent } from '@/lib/format'
+import OrderModal from '@/components/OrderModal'
 
 export const Route = createFileRoute('/')({
   component: Home,
 })
-
-const KRW_TO_IDR = 13.0
-function getJastipFeePercent(priceKRW: number) {
-  return priceKRW > 20000 ? 0.3 : 0.4
-}
 
 const onlineMalls = [
   {
@@ -30,28 +27,13 @@ const onlineMalls = [
   },
 ]
 
-const GOOGLE_FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSfwcT6QY3akGLy4WBxXMEvSymn9KsgLjwboHE9viFFA45kQhw/viewform'
-const GOOGLE_FORM_ORDER_DETAILS_ENTRY = 'entry.661900957'
-
-function buildOrderDetails(cart: Array<OrderItemInput>) {
-  return cart
-    .map((item) => {
-      const link = item.url ? ` - ${item.url}` : ''
-      return `${item.name} (₩${item.priceKRW.toLocaleString()})${link}`
-    })
-    .join('\n')
-}
-
-function formatIdr(value: number) {
-  return `Rp ${Math.round(value).toLocaleString('id-ID')}`
-}
-
 function Home() {
   const [cart, setCart] = useState<Array<OrderItemInput>>([])
   const [customUrl, setCustomUrl] = useState('')
   const [customName, setCustomName] = useState('')
   const [customPrice, setCustomPrice] = useState('')
+  const [showOrderModal, setShowOrderModal] = useState(false)
+  const [orderPlaced, setOrderPlaced] = useState(false)
 
   const addToCart = (item: OrderItemInput) => setCart((prev) => [...prev, item])
   const removeFromCart = (index: number) =>
@@ -76,9 +58,7 @@ function Home() {
   const grandTotal = subtotalIdr + totalFees
 
   const handleProceedToOrder = () => {
-    const orderDetails = buildOrderDetails(cart)
-    const formUrl = `${GOOGLE_FORM_URL}?usp=pp_url&${GOOGLE_FORM_ORDER_DETAILS_ENTRY}=${encodeURIComponent(orderDetails)}`
-    window.open(formUrl, '_blank')
+    setShowOrderModal(true)
   }
 
   return (
@@ -226,7 +206,30 @@ function Home() {
             </button>
           </div>
         </aside>
-      </main>
+            </main>
+
+      {showOrderModal && (
+        <OrderModal
+          cart={cart}
+          subtotalIdr={subtotalIdr}
+          totalIdr={grandTotal}
+          onClose={() => setShowOrderModal(false)}
+          onOrderPlaced={() => {
+            setShowOrderModal(false)
+            setCart([])
+            setOrderPlaced(true)
+          }}
+        />
+      )}
+
+      {orderPlaced && (
+        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg">
+          Order placed! We'll contact you on WhatsApp soon.
+          <button onClick={() => setOrderPlaced(false)} className="ml-2 underline">
+            Dismiss
+          </button>
+        </div>
+      )}
     </div>
   )
 }

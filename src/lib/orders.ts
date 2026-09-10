@@ -1,9 +1,28 @@
-// This file defines what one item in a customer's cart looks like.
-// "interface" here is just a description/shape, not code that runs —
-// it tells TypeScript "every cart item must have these fields."
+import { supabase } from './supabase'
 
 export interface OrderItemInput {
-  name: string        // item name, e.g. "Round Lab Sunscreen"
-  priceKRW: number     // price in Korean Won as a plain number
-  url?: string          // optional link to the item (the "?" means it's not required)
+  name: string
+  priceKRW: number
+  url?: string
+}
+
+export interface NewOrder {
+  customerName: string
+  whatsappNumber: string
+  items: Array<OrderItemInput>
+  subtotalIdr: number
+  totalIdr: number
+  notes?: string
+}
+
+export async function insertOrder(order: NewOrder) {
+  const { error } = await supabase.from('orders').insert({
+    customer_name: order.customerName,
+    whatsapp_number: order.whatsappNumber,
+    items: order.items,
+    subtotal_idr: order.subtotalIdr,
+    total_idr: order.totalIdr,
+    notes: order.notes || null,
+  })
+  return { error }
 }
