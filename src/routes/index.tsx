@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import products from '@/data/products'
 import type { OrderItemInput } from '@/lib/orders'
@@ -33,6 +32,8 @@ function Home() {
   const [customUrl, setCustomUrl] = useState('')
   const [customName, setCustomName] = useState('')
   const [customPrice, setCustomPrice] = useState('')
+  const [customImage, setCustomImage] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
 
@@ -59,21 +60,44 @@ function Home() {
   const removeFromCart = (index: number) =>
     setCart((prev) => prev.filter((_, i) => i !== index))
 
+  const fetchLinkPreview = async (url: string) => {
+    if (!url.trim()) return
+    setPreviewLoading(true)
+    try {
+      const res = await fetch(`/api/link-preview?url=${encodeURIComponent(url.trim())}`)
+      const data = await res.json()
+      if (data.title) setCustomName(data.title)
+      if (data.price) setCustomPrice(String(data.price))
+      if (data.image) setCustomImage(data.image)
+    } catch {
+      // if it fails, the customer just fills the form manually — no error shown
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
   const handleCustomSubmit = (e: FormEvent) => {
     e.preventDefault()
     const price = Number(customPrice)
     if (!customName.trim() || !price) return
-    addToCart({ name: customName.trim(), priceKRW: price, url: customUrl.trim() || undefined, quantity: 1 })
+    addToCart({
+      name: customName.trim(),
+      priceKRW: price,
+      url: customUrl.trim() || undefined,
+      image: customImage || undefined,
+      quantity: 1,
+    })
     setCustomName('')
     setCustomPrice('')
     setCustomUrl('')
+    setCustomImage('')
   }
 
   const totalKRW = cart.reduce((sum, item) => sum + item.priceKRW * item.quantity, 0)
   const subtotalIdr = totalKRW * KRW_TO_IDR
   const totalFees = cart.reduce(
     (sum, item) => sum + item.priceKRW * item.quantity * KRW_TO_IDR * getJastipFeePercent(item.priceKRW),
-    0
+    0,
   )
   const grandTotal = subtotalIdr + totalFees
 
@@ -157,9 +181,18 @@ function Home() {
                 type="url"
                 value={customUrl}
                 onChange={(e) => setCustomUrl(e.target.value)}
-                placeholder="Item URL (optional)"
+                onPaste={(e) => {
+                  const pasted = e.clipboardData.getData('text')
+                  setCustomUrl(pasted)
+                  fetchLinkPreview(pasted)
+                }}
+                placeholder="Item URL (optional) — paste a link to auto-fill"
                 className="w-full p-2 border rounded text-sm"
               />
+              {previewLoading && <p className="text-xs text-gray-400">Fetching product info…</p>}
+              {customImage && (
+                <img src={customImage} alt="Preview" className="h-20 w-20 object-cover rounded border" />
+              )}
               <input
                 type="number"
                 value={customPrice}
@@ -193,11 +226,17 @@ function Home() {
                   </span>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center border rounded">
-                      <button onClick={() => updateQuantity(i, item.quantity - 1)} className="px-2 text-gray-500 hover:text-gray-800">−</button>
+                      <button onClick={() => updateQuantity(i, item.quantity - 1)} className="px-2 text-gray-500 hover:text-gray-800">
+                        −
+                      </button>
                       <span className="px-2 text-xs">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(i, item.quantity + 1)} className="px-2 text-gray-500 hover:text-gray-800">+</button>
+                      <button onClick={() => updateQuantity(i, item.quantity + 1)} className="px-2 text-gray-500 hover:text-gray-800">
+                        +
+                      </button>
                     </div>
-                    <button onClick={() => removeFromCart(i)} className="text-xs text-rose-500 hover:underline">Remove</button>
+                    <button onClick={() => removeFromCart(i)} className="text-xs text-rose-500 hover:underline">
+                      Remove
+                    </button>
                   </div>
                 </li>
               ))}
