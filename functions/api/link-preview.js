@@ -16,7 +16,7 @@ export async function onRequestGet({ request }) {
     return null
   }
 
-  // Attempt 1: fetch the page directly (fast — this is what already works for Daiso/ZigZag)
+  // Attempt 1: fetch the page directly — works for Daiso/ZigZag, and can also pull price
   try {
     const res = await fetch(url, {
       headers: {
@@ -28,15 +28,17 @@ export async function onRequestGet({ request }) {
       const html = await res.text()
       const title = getMeta(html, 'og:title')
       const image = getMeta(html, 'og:image')
+      const priceRaw = getMeta(html, 'product:price:amount') || getMeta(html, 'og:price:amount')
+      const price = priceRaw ? Number(priceRaw.replace(/[^\d.]/g, '')) : null
       if (title || image) {
-        return Response.json({ title, image, price: null })
+        return Response.json({ title, image, price })
       }
     }
   } catch {
     // fall through to attempt 2
   }
 
-  // Attempt 2: site blocked us directly (e.g. Olive Young) — try Microlink as a fallback
+  // Attempt 2: site blocked the direct fetch (e.g. Olive Young) — try Microlink as a fallback
   try {
     const res = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`)
     const json = await res.json()
