@@ -47,7 +47,21 @@ export default function OrderModal({
       return
     }
 
-    onOrderPlaced()
+    fetch('/api/notify-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: customerName.trim(),
+        whatsappNumber: whatsappNumber.trim(),
+        items: cart,
+        totalIdr,
+        notes: notes.trim() || undefined,
+    }),
+  }).catch(() => {
+    // if the email fails to send, the order is still saved in Supabase — no need to block the customer
+  })
+
+  onOrderPlaced()
   }
 
   return (
