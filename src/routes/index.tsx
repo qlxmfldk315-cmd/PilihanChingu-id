@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import products from '@/data/products'
 import type { OrderItemInput } from '@/lib/orders'
@@ -76,7 +76,7 @@ function Home() {
     }
   }
 
-  const handleCustomSubmit = (e: FormEvent) => {
+  const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const price = Number(customPrice)
     if (!customName.trim() || !price) return
@@ -97,7 +97,7 @@ function Home() {
   const subtotalIdr = totalKRW * KRW_TO_IDR
   const totalFees = cart.reduce(
     (sum, item) => sum + item.priceKRW * item.quantity * KRW_TO_IDR * getJastipFeePercent(item.priceKRW),
-    0,
+    0
   )
   const grandTotal = subtotalIdr + totalFees
 
@@ -110,9 +110,12 @@ function Home() {
       <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-bold text-rose-500">PilihanChingu.id</h1>
-          <div className="relative bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+          <button
+            onClick={() => document.getElementById('cart-section')?.scrollIntoView({ behavior: 'smooth' })}
+            className="relative bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-rose-600 transition"
+          >
             🛒 Cart ({cart.length})
-          </div>
+          </button>
         </div>
       </nav>
 
@@ -121,17 +124,19 @@ function Home() {
           <span className="text-xs font-bold text-black-400 uppercase tracking-wide">
             Supporting Online Malls
           </span>
-          {onlineMalls.map((mall) => (
-            <a
-              key={mall.name}
-              href={mall.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`px-4 py-1.5 rounded-lg border text-sm font-bold transition ${mall.className}`}
-            >
-              {mall.name}
-            </a>
-          ))}
+          {onlineMalls.map((mall) => {
+            return (
+              <a
+                key={mall.name}
+                href={mall.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`px-4 py-1.5 rounded-lg border text-sm font-bold transition ${mall.className}`}
+              >
+                {mall.name}
+              </a>
+            )
+          })}
         </div>
       </div>
 
@@ -211,10 +216,12 @@ function Home() {
           </div>
         </section>
 
-        <aside className="space-y-4">
+        <aside className="space-y-4" id="cart-section">
           <div className="bg-white rounded-xl border p-4 space-y-3">
             <h3 className="font-bold">Your Cart</h3>
-            {cart.length === 0 && <p className="text-sm text-gray-500">No items yet.</p>}
+            {cart.length === 0 && (
+              <p className="text-sm text-gray-500">No items yet.</p>
+            )}
             <ul className="space-y-2">
               {cart.map((item, i) => (
                 <li key={i} className="flex justify-between items-start text-sm gap-2">
@@ -226,17 +233,11 @@ function Home() {
                   </span>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center border rounded">
-                      <button onClick={() => updateQuantity(i, item.quantity - 1)} className="px-2 text-gray-500 hover:text-gray-800">
-                        −
-                      </button>
+                      <button onClick={() => updateQuantity(i, item.quantity - 1)} className="px-2 text-gray-500 hover:text-gray-800">−</button>
                       <span className="px-2 text-xs">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(i, item.quantity + 1)} className="px-2 text-gray-500 hover:text-gray-800">
-                        +
-                      </button>
+                      <button onClick={() => updateQuantity(i, item.quantity + 1)} className="px-2 text-gray-500 hover:text-gray-800">+</button>
                     </div>
-                    <button onClick={() => removeFromCart(i)} className="text-xs text-rose-500 hover:underline">
-                      Remove
-                    </button>
+                    <button onClick={() => removeFromCart(i)} className="text-xs text-rose-500 hover:underline">Remove</button>
                   </div>
                 </li>
               ))}
