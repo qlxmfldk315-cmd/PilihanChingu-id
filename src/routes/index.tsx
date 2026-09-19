@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import products from '@/data/products'
 import type { OrderItemInput } from '@/lib/orders'
-import { KRW_TO_IDR, formatIdr, getJastipFeePercent } from '@/lib/format'
+import { formatIdr } from '@/lib/format'
+import { getKrwToIdrRate } from '@/lib/fx'
+import { calculateItemTotalIDRSync, calculateFeeDiscount } from '@/lib/pricing'
 import OrderModal from '@/components/OrderModal'
 
 export const Route = createFileRoute('/')({
@@ -36,6 +38,11 @@ function Home() {
   const [previewLoading, setPreviewLoading] = useState(false)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
+  const [rate, setRate] = useState<number | null>(null)
+
+  useEffect(() => {
+    getKrwToIdrRate().then(setRate)
+  }, [])
 
   const addToCart = (item: OrderItemInput) => {
     setCart((prev) => {
@@ -93,12 +100,20 @@ function Home() {
     setCustomImage('')
   }
 
-  const totalKRW = cart.reduce((sum, item) => sum + item.priceKRW * item.quantity, 0)
-  const subtotalIdr = totalKRW * KRW_TO_IDR
-  const totalFees = cart.reduce(
-    (sum, item) => sum + item.priceKRW * item.quantity * KRW_TO_IDR * getJastipFeePercent(item.priceKRW),
-    0
-  )
+  const effectiveRate = rate ?? 12
+
+  let subtotalIdr = 0
+  let totalFeeIdr = 0
+  const totalItemCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+
+  for (const item of cart) {
+    const { itemCostIDR, feeIDR } = calculateItemTotalIDRSync(item.priceKRW, item.quantity, effectiveRate)
+    subtotalIdr += itemCostIDR
+    totalFeeIdr += feeIDR
+  }
+
+  const { discountAmountIDR } = calculateFeeDiscount(totalItemCount, subtotalIdr, totalFeeIdr)
+  const totalFees = totalFeeIdr - discountAmountIDR
   const grandTotal = subtotalIdr + totalFees
 
   const handleProceedToOrder = () => {
@@ -144,21 +159,32 @@ function Home() {
         <section className="lg:col-span-2 space-y-8">
           <div>
             <h2 className="text-2xl font-bold mb-4">Curated Items</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {products.map((item) => {
-                const estIDR = item.priceKRW * KRW_TO_IDR * (1 + getJastipFeePercent(item.priceKRW))
+                const estIDR = calculateItemTotalIDRSync(item.priceKRW, 1, effectiveRate).totalIDR
                 return (
-                  <div key={item.id} className="bg-white rounded-xl border p-4 space-y-2">
-                    <p className="font-semibold text-sm">{item.name}</p>
-                    <p className="text-xs text-gray-500">
-                      <img src={item.image} alt={item.name} className="w-full h-36 object-cover rounded-lg" />
-                      ₩{item.priceKRW.toLocaleString()} · est. {formatIdr(estIDR)}
+                  <div
+                    key={item.id}
+                    className="flex flex-col bg-white rounded-xl border p-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full aspect-square object-cover rounded-lg mb-2"
+                    />
+                    <p className="font-semibold text-sm leading-snug h-10 overflow-hidden">
+                      {item.name}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1 mb-3">
+                      ₩{item.priceKRW.toLocaleString()}
+                      <br />
+                      <span className="text-gray-400">est. {formatIdr(estIDR)}</span>
                     </p>
                     <button
                       onClick={() =>
                         addToCart({ name: item.name, priceKRW: item.priceKRW, url: item.url, image: item.image, quantity: 1 })
                       }
-                      className="w-full bg-rose-50 text-rose-600 border border-rose-200 rounded-lg py-1.5 text-sm font-semibold hover:bg-rose-100 transition"
+                      className="w-full mt-auto bg-rose-50 text-rose-600 border border-rose-200 rounded-lg py-1.5 text-sm font-semibold hover:bg-rose-100 transition"
                     >
                       Add to cart
                     </button>
@@ -250,6 +276,12 @@ function Home() {
                   <span>{formatIdr(subtotalIdr)}</span>
                 </div>
                 <p className="text-xs text-gray-400">Includes jastip fee, excludes shipping fee</p>
+                {discountAmountIDR > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span>-{formatIdr(discountAmountIDR)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-base pt-1">
                   <span>Total</span>
                   <span>{formatIdr(grandTotal)}</span>

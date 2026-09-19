@@ -17,15 +17,17 @@ function pickTier(priceWon: number): FeeTier {
   return FEE_TIERS.find((t) => t.maxWon === null || priceWon <= t.maxWon)!;
 }
 
-export async function calculateItemTotalIDR(priceWon: number, qty: number) {
-  const rate = await getKrwToIdrRate();
+export function calculateItemTotalIDRSync(priceWon: number, qty: number, rate: number) {
   const tier = pickTier(priceWon);
-
   const itemCostIDR = Math.round(priceWon * rate) * qty;
   const percentFee = priceWon * rate * tier.percent;
   const feeIDR = Math.round(Math.max(percentFee, tier.minFeeIDR)) * qty;
-
   return { itemCostIDR, feeIDR, totalIDR: itemCostIDR + feeIDR };
+}
+
+export async function calculateItemTotalIDR(priceWon: number, qty: number) {
+  const rate = await getKrwToIdrRate();
+  return calculateItemTotalIDRSync(priceWon, qty, rate);
 }
 
 export function calculateFeeDiscount(
@@ -36,7 +38,6 @@ export function calculateFeeDiscount(
   let discountPercent = 0;
   if (subtotalIDR > 1_000_000) discountPercent = 0.07;
   if (totalItemCount >= 10) discountPercent = Math.max(discountPercent, 0.05);
-
   return {
     discountPercent,
     discountAmountIDR: Math.round(totalFeeIDR * discountPercent),
