@@ -144,14 +144,14 @@ function Home() {
         <section className="lg:col-span-2 space-y-8">
           <div>
             <h2 className="text-2xl font-bold mb-4">Curated Items</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {products.map((item) => {
                 const estIDR = item.priceKRW * KRW_TO_IDR * (1 + getJastipFeePercent(item.priceKRW))
                 return (
                   <div key={item.id} className="bg-white rounded-xl border p-4 space-y-2">
                     <p className="font-semibold text-sm">{item.name}</p>
                     <p className="text-xs text-gray-500">
-                      <img src={item.image} alt={item.name} className="w-full h-64 object-cover rounded-lg" />
+                      <img src={item.image} alt={item.name} className="w-full h-36 object-cover rounded-lg" />
                       ₩{item.priceKRW.toLocaleString()} · est. {formatIdr(estIDR)}
                     </p>
                     <button
