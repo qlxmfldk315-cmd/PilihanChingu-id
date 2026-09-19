@@ -7,6 +7,8 @@ interface OrderModalProps {
   cart: Array<OrderItemInput>
   subtotalIdr: number
   totalIdr: number
+  shippingOptionId: string
+  shippingOptionLabel: string
   onClose: () => void
   onOrderPlaced: () => void
 }
@@ -15,6 +17,8 @@ export default function OrderModal({
   cart,
   subtotalIdr,
   totalIdr,
+  shippingOptionId,
+  shippingOptionLabel,
   onClose,
   onOrderPlaced,
 }: OrderModalProps) {
@@ -37,6 +41,8 @@ export default function OrderModal({
       items: cart,
       subtotalIdr,
       totalIdr,
+      shippingOptionId,
+      shippingOptionLabel,
       notes: notes.trim() || undefined,
     })
 
@@ -55,13 +61,14 @@ export default function OrderModal({
         whatsappNumber: whatsappNumber.trim(),
         items: cart,
         totalIdr,
+        shippingOptionLabel,
         notes: notes.trim() || undefined,
-    }),
-  }).catch(() => {
-    // if the email fails to send, the order is still saved in Supabase — no need to block the customer
-  })
+      }),
+    }).catch(() => {
+      // if the email fails to send, the order is still saved in Supabase — no need to block the customer
+    })
 
-  onOrderPlaced()
+    onOrderPlaced()
   }
 
   return (
@@ -76,11 +83,15 @@ export default function OrderModal({
 
         <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
           {cart.map((item, i) => (
-  <div key={i} className="flex justify-between">
-    <span>{item.name} × {item.quantity}</span>
-    <span>₩{(item.priceKRW * item.quantity).toLocaleString()}</span>
-  </div>
-))}
+            <div key={i} className="flex justify-between">
+              <span>{item.name} × {item.quantity}</span>
+              <span>₩{(item.priceKRW * item.quantity).toLocaleString()}</span>
+            </div>
+          ))}
+          <div className="flex justify-between text-xs text-gray-500 pt-1">
+            <span>Shipping</span>
+            <span>{shippingOptionLabel}</span>
+          </div>
           <div className="border-t pt-1 flex justify-between font-bold">
             <span>Total</span>
             <span>{formatIdr(totalIdr)}</span>

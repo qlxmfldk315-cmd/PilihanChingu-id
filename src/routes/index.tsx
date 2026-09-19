@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import products from '@/data/products'
-import type { OrderItemInput } from '@/lib/orders'
+import type { OrderItemInput, ShippingOption } from '@/lib/orders'
+import { fetchShippingOptions } from '@/lib/orders'
 import { formatIdr } from '@/lib/format'
 import { getKrwToIdrRate } from '@/lib/fx'
 import { calculateItemTotalIDRSync, calculateFeeDiscount } from '@/lib/pricing'
@@ -39,9 +40,18 @@ function Home() {
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [rate, setRate] = useState<number | null>(null)
+  const [shippingOptions, setShippingOptions] = useState<Array<ShippingOption>>([])
+  const [selectedShippingId, setSelectedShippingId] = useState<string>('')
 
   useEffect(() => {
     getKrwToIdrRate().then(setRate)
+  }, [])
+
+  useEffect(() => {
+    fetchShippingOptions().then(({ data }) => {
+      setShippingOptions(data)
+      if (data.length > 0) setSelectedShippingId(data[0].id)
+    })
   }, [])
 
   const addToCart = (item: OrderItemInput) => {
@@ -115,6 +125,9 @@ function Home() {
   const { discountAmountIDR } = calculateFeeDiscount(totalItemCount, subtotalIdr, totalFeeIdr)
   const totalFees = totalFeeIdr - discountAmountIDR
   const grandTotal = subtotalIdr + totalFees
+
+  const selectedShippingOption = shippingOptions.find((o) => o.id === selectedShippingId)
+  const selectedShippingLabel = selectedShippingOption?.label ?? ''
 
   const handleProceedToOrder = () => {
     setShowOrderModal(true)
@@ -269,6 +282,27 @@ function Home() {
               ))}
             </ul>
 
+            {cart.length > 0 && shippingOptions.length > 0 && (
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-xs font-semibold text-gray-600">Shipping method</p>
+                {shippingOptions.map((option) => (
+                  <label
+                    key={option.id}
+                    className="flex items-center gap-2 text-sm cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="shipping-option"
+                      value={option.id}
+                      checked={selectedShippingId === option.id}
+                      onChange={() => setSelectedShippingId(option.id)}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            )}
+
             {cart.length > 0 && (
               <div className="border-t pt-3 space-y-1 text-sm">
                 <div className="flex justify-between">
@@ -291,7 +325,7 @@ function Home() {
 
             <button
               onClick={handleProceedToOrder}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || !selectedShippingId}
               className="w-full bg-rose-500 text-white py-3 rounded-lg font-semibold disabled:opacity-50 hover:bg-rose-600 transition"
             >
               Proceed to Order
@@ -305,6 +339,8 @@ function Home() {
           cart={cart}
           subtotalIdr={subtotalIdr}
           totalIdr={grandTotal}
+          shippingOptionId={selectedShippingId}
+          shippingOptionLabel={selectedShippingLabel}
           onClose={() => setShowOrderModal(false)}
           onOrderPlaced={() => {
             setShowOrderModal(false)
