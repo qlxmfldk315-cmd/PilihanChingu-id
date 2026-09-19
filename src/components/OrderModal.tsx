@@ -126,6 +126,7 @@ export default function OrderModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
+              placeholder="shade pink 02"
               className="w-full p-2 border rounded text-sm mt-1"
             />
           </div>

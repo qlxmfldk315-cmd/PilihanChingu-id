@@ -309,7 +309,7 @@ function Home() {
                   <span>Subtotal</span>
                   <span>{formatIdr(subtotalIdr)}</span>
                 </div>
-                <p className="text-xs text-gray-400">Includes jastip fee, excludes shipping fee</p>
+                <p className="text-xs text-gray-400">Termasuk jastip fee, Shipping COD</p>
                 {discountAmountIDR > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount</span>
