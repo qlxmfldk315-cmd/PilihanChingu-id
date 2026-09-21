@@ -27,6 +27,33 @@ export interface NewOrder {
   notes?: string
 }
 
+export interface Order {
+  id: string
+  created_at: string
+  customer_name: string
+  whatsapp_number: string
+  items: Array<OrderItemInput>
+  subtotal_idr: number
+  total_idr: number
+  shipping_option_id: string
+  shipping_option_label: string
+  notes: string | null
+  weight_grams: number | null
+  local_shipping_cost_idr: number
+  third_party_shipping_cost_idr: number
+  shipping_charged_idr: number
+  payment_status: 'unpaid' | 'paid' | 'refunded'
+  invoice_number: string | null
+}
+
+export interface OrderFinanceUpdate {
+  weight_grams?: number | null
+  local_shipping_cost_idr?: number
+  third_party_shipping_cost_idr?: number
+  shipping_charged_idr?: number
+  payment_status?: 'unpaid' | 'paid' | 'refunded'
+}
+
 export async function insertOrder(order: NewOrder) {
   const { error } = await supabase.from('orders').insert({
     customer_name: order.customerName,
@@ -49,4 +76,18 @@ export async function fetchShippingOptions() {
     .order('sort_order', { ascending: true })
 
   return { data: (data as ShippingOption[]) || [], error }
+}
+
+export async function fetchOrders() {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  return { data: (data as Order[]) || [], error }
+}
+
+export async function updateOrderFinance(orderId: string, updates: OrderFinanceUpdate) {
+  const { error } = await supabase.from('orders').update(updates).eq('id', orderId)
+  return { error }
 }
