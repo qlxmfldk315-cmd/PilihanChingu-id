@@ -124,6 +124,7 @@ function Home() {
 
   const { discountPercent, discountAmountIDR } = calculateFeeDiscount(totalItemCount, subtotalIdr, totalFeeIdr)
   const totalFees = totalFeeIdr - discountAmountIDR
+  const originalTotal = subtotalIdr + totalFeeIdr
   const grandTotal = subtotalIdr + totalFees
 
   const selectedShippingOption = shippingOptions.find((o) => o.id === selectedShippingId)
@@ -149,7 +150,7 @@ function Home() {
 
       <div className="bg-rose-50 border-b border-rose-100 text-center py-2 px-4">
         <p className="text-xs sm:text-sm text-rose-700 font-medium">
-          🎉 Diskon jastip fee: <span className="font-bold">5% off</span> untuk 10+ item, atau{' '}
+          🎉 Diskon: <span className="font-bold">5% off</span> untuk 10+ item, atau{' '}
           <span className="font-bold">7% off</span> untuk belanja di atas Rp1.000.000!
         </p>
       </div>
@@ -312,26 +313,6 @@ function Home() {
 
             {cart.length > 0 && (
               <div className="border-t pt-3 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Subtotal barang</span>
-                  <span>{formatIdr(subtotalIdr)}</span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span>Jastip fee</span>
-                  <span className="flex items-center gap-2">
-                    {discountPercent > 0 && (
-                      <>
-                        <span className="text-xs text-gray-400 line-through">{formatIdr(totalFeeIdr)}</span>
-                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">
-                          -{Math.round(discountPercent * 100)}%
-                        </span>
-                      </>
-                    )}
-                    <span className={discountPercent > 0 ? 'font-semibold' : ''}>{formatIdr(totalFees)}</span>
-                  </span>
-                </div>
-
                 {selectedShippingOption && (
                   <p className="text-xs text-gray-400">
                     {selectedShippingOption.type === 'hand-carry'
@@ -345,7 +326,17 @@ function Home() {
                     <div>TOTAL PRICE</div>
                     <div className="text-xs font-normal text-gray-400">(Ongkir/shipping dibayar terpisah — COD)</div>
                   </div>
-                  <span>{formatIdr(grandTotal)}</span>
+                  <span className="flex items-center gap-2">
+                    {discountPercent > 0 && (
+                      <>
+                        <span className="text-xs text-gray-400 line-through font-normal">{formatIdr(originalTotal)}</span>
+                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold">
+                          -{Math.round(discountPercent * 100)}%
+                        </span>
+                      </>
+                    )}
+                    <span>{formatIdr(grandTotal)}</span>
+                  </span>
                 </div>
               </div>
             )}
