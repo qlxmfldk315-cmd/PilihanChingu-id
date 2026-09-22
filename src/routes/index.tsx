@@ -30,6 +30,9 @@ const onlineMalls = [
   },
 ]
 
+const DISCOUNT_SUBTOTAL_THRESHOLD_IDR = 1_000_000
+const DISCOUNT_ITEM_COUNT_THRESHOLD = 10
+
 function Home() {
   const [cart, setCart] = useState<Array<OrderItemInput>>([])
   const [customUrl, setCustomUrl] = useState('')
@@ -127,6 +130,9 @@ function Home() {
   const originalTotal = subtotalIdr + totalFeeIdr
   const grandTotal = subtotalIdr + totalFees
 
+  const amountNeededForDiscount = DISCOUNT_SUBTOTAL_THRESHOLD_IDR - subtotalIdr
+  const itemsNeededForDiscount = DISCOUNT_ITEM_COUNT_THRESHOLD - totalItemCount
+
   const selectedShippingOption = shippingOptions.find((o) => o.id === selectedShippingId)
   const selectedShippingLabel = selectedShippingOption?.label ?? ''
 
@@ -150,8 +156,8 @@ function Home() {
 
       <div className="bg-rose-50 border-b border-rose-100 text-center py-2 px-4">
         <p className="text-xs sm:text-sm text-rose-700 font-medium">
-          🎉 Diskon: <span className="font-bold">5% off</span> untuk 10+ item, atau{' '}
-          <span className="font-bold">7% off</span> untuk belanja di atas Rp1.000.000!
+          🎉 Diskon 7% untuk belanja produk di atas Rp1.000.000 (di luar shipping fee), atau{' '}
+          <span className="font-bold">5% off</span> untuk 10+ item!
         </p>
       </div>
 
@@ -289,6 +295,16 @@ function Home() {
                 </li>
               ))}
             </ul>
+
+            {cart.length > 0 && discountPercent === 0 && (
+              <div className="text-xs text-rose-600 bg-rose-50 rounded-lg p-2">
+                {itemsNeededForDiscount > 0 && itemsNeededForDiscount <= 3 ? (
+                  <>Tambah {itemsNeededForDiscount} item lagi untuk dapat diskon 5%! 🎉</>
+                ) : amountNeededForDiscount > 0 ? (
+                  <>Tambah {formatIdr(amountNeededForDiscount)} lagi untuk dapat diskon 7%! 🎉</>
+                ) : null}
+              </div>
+            )}
 
             {cart.length > 0 && shippingOptions.length > 0 && (
               <div className="border-t pt-3 space-y-2">
